@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">DominentColor_Backgound</string>
+    <string name="bg">background</string>
+    <string name="main_img">main_image</string>
+    <string name="film">film</string>
+</resources>
