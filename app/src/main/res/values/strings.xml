@@ -3,4 +3,21 @@
     <string name="bg">background</string>
     <string name="main_img">main_image</string>
     <string name="film">film</string>
+    <string-array name="image_options">
+        <item>Image 1</item>
+        <item>Image 2</item>
+        <item>Image 3</item>
+        <item>Image 4</item>
+        <item>Image 5</item>
+        <item>Image 6</item>
+        <item>Image 7</item>
+        <item>Image 8</item>
+        <item>Image 9</item>
+        <item>Image 10</item>
+    </string-array>
+
+    <string-array name="color_extraction_options">
+        <item>Dominant Color (Full Image)</item>
+        <item>Dominant Color (Center Section)</item>
+    </string-array>
 </resources>
