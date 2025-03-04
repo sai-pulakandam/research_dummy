@@ -1,7 +1,6 @@
 package com.example.dominentcolor_backgound;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -24,7 +23,7 @@ import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private RelativeLayout backgroundLayout;
@@ -63,7 +62,8 @@ public class MainActivity extends AppCompatActivity {
                         "Dominant Color (Center 50%)",
                         "Dominant Color (Center 25%)",
                         "Most Saturated Color (100% Sat, 50% Lightness)",
-                        "getMostHueAndSaturatedColor"
+                        "getMostSaturatedColor",
+                        "getMostSaturatedAnd50LightnessColor"
                 }
         );
         colorSpinner.setAdapter(colorAdapter);
@@ -81,7 +81,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
 
         colorSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -91,7 +92,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
 
         hideDropdowns = () -> {
@@ -113,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         int imageResId = imageMap.get(selectedImage);
-        Log.d("GlideDebug", "Loading image: " + imageResId);
+        Log.d("GlideDebug", "Loading image: " + selectedImage);
 
         // Display the image in ImageView
         ImageView imageView = findViewById(R.id.imageView);
@@ -136,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                         int selectedColorOption = colorSpinner.getSelectedItemPosition();
                         switch (selectedColorOption) {
                             case 0: // Full image dominant color
-                                backgroundLayout.setBackgroundColor(getDominantColor(bitmap,defaultColor));
+                                backgroundLayout.setBackgroundColor(getDominantColor(bitmap, defaultColor));
                                 break;
 
                             case 1: // 50% × 50% center section
@@ -151,9 +153,11 @@ public class MainActivity extends AppCompatActivity {
                                 backgroundLayout.setBackgroundColor(getAdjustedSaturatedColor(bitmap));
                                 break;
                             case 4: // Most saturated color with 100% saturation and 50% lightness
-                                backgroundLayout.setBackgroundColor(getMostHueAndSaturatedColor(bitmap));
+                                backgroundLayout.setBackgroundColor(getMostSaturatedColor(bitmap));
                                 break;
-
+                            case 5: //getMostSaturatedAnd50LightnessColor
+                                backgroundLayout.setBackgroundColor(getMostSaturatedAnd50LightnessColor(bitmap));
+                                break;
                             default:
                                 Log.e("Error", "Invalid color selection");
                                 break;
@@ -214,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
         int startY = (height - sectionHeight) / 2;
 
         Bitmap centerSection = Bitmap.createBitmap(bitmap, startX, startY, sectionWidth, sectionHeight);
-        return getDominantColor(centerSection,defaultColor);
+        return getDominantColor(centerSection, defaultColor);
     }
 
     private int getDominantColorFromCenter25Section(Bitmap bitmap) {
@@ -227,7 +231,7 @@ public class MainActivity extends AppCompatActivity {
         int startY = (height - sectionHeight) / 2;
 
         Bitmap centerSection = Bitmap.createBitmap(bitmap, startX, startY, sectionWidth, sectionHeight);
-        return getDominantColor(centerSection,defaultColor);
+        return getDominantColor(centerSection, defaultColor);
     }
 
     private int getAdjustedSaturatedColor(Bitmap bitmap) {
@@ -257,43 +261,144 @@ public class MainActivity extends AppCompatActivity {
 
         bestHsv[1] = 1.0f; // Set Saturation to 100%
         bestHsv[2] = 1.0f; //(bestHsv[2]*(2-bestHsv[1]))/2; // Set Lightness to 50%
-        Log.d("ColorDebug", "H: "+bestHsv[0]+"S: "+bestHsv[1]+"B: "+bestHsv[2]);
+        Log.d("ColorDebug", "H: " + bestHsv[0] + "S: " + bestHsv[1] + "B: " + bestHsv[2]);
         return Color.HSVToColor(bestHsv);
     }
-    private int getMostHueAndSaturatedColor(Bitmap bitmap) {
-            int width = bitmap.getWidth();
-            int height = bitmap.getHeight();
-            int pixelCount = width * height;
+//    private int getMostHueAndSaturatedColor(Bitmap bitmap) {
+//            int width = bitmap.getWidth();
+//            int height = bitmap.getHeight();
+//            int pixelCount = width * height;
+//
+//            int[] pixels = new int[pixelCount];
+//            bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+//
+//            float maxHue = 0, maxSaturation = 0;
+//            int bestColor = Color.BLACK;
+//
+//            for (int pixel : pixels) {
+//                float[] hsv = new float[3];
+//                Color.colorToHSV(pixel, hsv);
+//
+//                // Check if hue and saturation are highest
+//                if (hsv[0] > maxHue || (hsv[0] == maxHue && hsv[1] > maxSaturation)) {
+//                    maxHue = hsv[0];
+//                    maxSaturation = hsv[1];
+//                    bestColor = pixel;
+//                }
+//            }
+//
+//            float[] bestHsv = new float[3];
+//            Color.colorToHSV(bestColor, bestHsv);
+//
+//            // Set saturation to 100% and adjust brightness to HSL Lightness 50%
+//            bestHsv[1] = 1.0f;
+//            bestHsv[2] = 1.0f; //(bestHsv[2] * (2 - bestHsv[1])) / 2;
+//
+//          return Color.HSVToColor(bestHsv);
+//        }
 
-            int[] pixels = new int[pixelCount];
-            bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
 
-            float maxHue = 0, maxSaturation = 0;
-            int bestColor = Color.BLACK;
+    //Extract the colour of the pixel with the highest saturation.
+    private int getMostSaturatedColor(Bitmap bitmap) {
+        Palette palette2 = Palette.from(bitmap).generate();
+        List<Palette.Swatch> swatches = palette2.getSwatches();
+        int bestColor = Color.BLACK;
+        float maxSaturation = 0F;
+        float hue = 0F;
+        float Ligthness = 0F;
+        float saturation = 0F;
 
-            for (int pixel : pixels) {
-                float[] hsv = new float[3];
-                Color.colorToHSV(pixel, hsv);
-
-                // Check if hue and saturation are highest
-                if (hsv[0] > maxHue || (hsv[0] == maxHue && hsv[1] > maxSaturation)) {
-                    maxHue = hsv[0];
-                    maxSaturation = hsv[1];
-                    bestColor = pixel;
-                }
+        for (Palette.Swatch swatch : swatches) {
+            float[] hsl = swatch.getHsl();
+            saturation = hsl[1];
+            if (saturation > maxSaturation) {
+                saturation = hsl[1];
+                hue = hsl[0];
+                Ligthness = hsl[2];
+                maxSaturation = saturation;
+                Log.d("RGBColorDebug: with hsl", "RGB " + hslToColor(hsl[0], maxSaturation, hsl[2]));
+                bestColor = swatch.getRgb();
+                Log.d("RGBColorDebug with rgb", "RGB " + bestColor);
+               // Log.d("RGBColorDebug with HSV Conversion", "RGB " + Color.HSVToColor(hsl)); --> HSV conversion is not returning the correct color
             }
-
-            float[] bestHsv = new float[3];
-            Color.colorToHSV(bestColor, bestHsv);
-
-            // Set saturation to 100% and adjust brightness to HSL Lightness 50%
-            bestHsv[1] = 1.0f;
-            bestHsv[2] = 1.0f; //(bestHsv[2] * (2 - bestHsv[1])) / 2;
-
-          return Color.HSVToColor(bestHsv);
         }
 
 
+        Log.d("HSLColorDebug", "H: " + hue + "S: " + maxSaturation + "B: " + Ligthness);
+        Log.d("RGBColorDebug", "RGB " + bestColor);
+        return bestColor;
+    }
+
+    // Extract the colour of the pixel with the highest saturation. In this case, the saturation value is not changed, and the RGB colour values are extracted when the lightness is changed to 50%.
+    public static int getMostSaturatedAnd50LightnessColor(Bitmap bitmap) {
+        Palette palette8 = Palette.from(bitmap).generate();
+        List<Palette.Swatch> swatches = palette8.getSwatches();
+        int bestColor = Color.BLACK;
+        float maxSaturation = 0F;
+
+        float hue = 0F;
+        float ligthness = 0F;
+        float saturation = 0F;
+
+        for (Palette.Swatch swatch : swatches) {
+            float[] hsl = swatch.getHsl();
+            saturation = hsl[1];
+            if (saturation > maxSaturation) {
+                saturation = hsl[1];
+                maxSaturation = saturation;
+                hue= hsl[0];
+                ligthness= hsl[2];
+                Log.d("HSLColorDebug-0: before changing the Lightness", "H: " + hsl[0] + "S: " + hsl[1] + "B: " + hsl[2]);
+                hsl[2] = 0.5f;
+                bestColor = hslToColor(hsl[0], maxSaturation, hsl[2]);
+                Log.d("HSLColorDebug-1: After changing the Lightness", "H: " + hsl[0] + "S: " + maxSaturation + "B: " + hsl[2]);
+            }
+        }
+        Log.d("HSLColorDebug-1:Reconfirming", "H: " + hue + "S: " + maxSaturation + "B: " + ligthness);
+        Log.d("RGBColorDebug-1", "RGB " + bestColor);
+        return bestColor;
+    }
+
+    //Helper Class to convert hsl to color
+    public static int hslToColor(float h, float s, float l) {
+        float c = (1 - Math.abs(2 * l - 1)) * s; // Chroma
+        float x = c * (1 - Math.abs((h / 60) % 2 - 1));
+        float m = l - c / 2;
+
+        float r = 0, g = 0, b = 0;
+
+        if (h >= 0 && h < 60) {
+            r = c;
+            g = x;
+            b = 0;
+        } else if (h >= 60 && h < 120) {
+            r = x;
+            g = c;
+            b = 0;
+        } else if (h >= 120 && h < 180) {
+            r = 0;
+            g = c;
+            b = x;
+        } else if (h >= 180 && h < 240) {
+            r = 0;
+            g = x;
+            b = c;
+        } else if (h >= 240 && h < 300) {
+            r = x;
+            g = 0;
+            b = c;
+        } else if (h >= 300 && h < 360) {
+            r = c;
+            g = 0;
+            b = x;
+        }
+
+        int red = Math.round((r + m) * 255);
+        int green = Math.round((g + m) * 255);
+        int blue = Math.round((b + m) * 255);
+
+        return Color.rgb(red, green, blue); // Convert RGB to int color
+    }
 }
 
 

@@ -1,0 +1,11 @@
+[core]
+	repositoryformatversion = 0
+	filemode = false
+	bare = true
+	symlinks = false
+	ignorecase = true
+[remote "origin"]
+	url = https://dev.azure.com/instax/instaxCommon/_git/Research
+	fetch = +refs/*:refs/*
+	mirror = true
+	pushurl = https://dev.azure.com/instax/instaxcommon/_git/Research/Research_DynamicBackground
